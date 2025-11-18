@@ -36,7 +36,7 @@ CRUD 구현과 웹 애플리케이션 전 과정을 학습하기 위해 진행�
 
 ## ⚙ 사용기술
 +	Frontend: JSP, Jquery, JavaScript
-+	Backend: Spring Framework (Spring Security), MyBatis
++	Backend: Spring Framework, MyBatis
 +	Database: PostgreSQL
 +	Server: Apache Tomcat 9.0
 
