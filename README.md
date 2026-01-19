@@ -233,17 +233,6 @@ if (file != null && !file.isEmpty()) {
 </details>
 
 <details>
-  <summary>리뷰 수정 API Validation Null에러</summary>
-  + 배경
-    : 리뷰 수정 시 Validation Null에러가 발생
-  + 원인
-    : 등록/수정/삭제 모두 같은 ReviewVO를 사용했는데, Validation 때문에 문제가 생겼습니다.
-      수정 시에는 리뷰 내용만 필요한데, VO에 bookID와 reviewer에 @NotNull, @NotBlank가 붙어있어서 검증 에러가 났습니다.
-      이상적으로는 등록용/수정용 DTO를 분리하는 게 맞지만, 시간 관계상 수정 시에도 bookID와 reviewer를 함께 보내는 방식으로 해결했습니다.
-  
-</details>
-
-<details>
   <summary>리뷰 기능 API 응답 구조 개선</summary>
   
   + 배경<br>
@@ -353,6 +342,31 @@ if (file != null && !file.isEmpty()) {
   ### 배운 점
   - **클라이언트-서버 책임 분리**: 에러 메시지는 서버에서 생성하고 클라이언트는 표시만
   - **API 설계의 중요성**: 초기 설계 단계에서 확장성을 고려하지 않으면 나중에 큰 리팩토링 필요
+
+## 추가 문제점
+도서 수정시 이미지 null 문제
+  + 배경<br>
+    : 리뷰 수정 시 Validation Null에러가 발생
+    
+  + 원인<br>
+    ```
+    @Data
+    public class ReviewVO {
+    @NotNull(message = "책 정보가 필요합니다")  // ← 이게 문제
+    private Long bookID;
+    
+    @NotBlank(message = "작성자 정보가 필요합니다")  // ← 이것도
+    private String reviewer;
+    
+    @NotBlank(message = "리뷰 내용을 입력해주세요")
+    private String review;
+    }
+    ```
+    : 등록/수정/삭제 모두 같은 ReviewVO를 사용했는데, Validation 때문에 문제가 생겼습니다.<br>
+      수정 시에는 리뷰 내용만 필요한데, VO에 bookID와 reviewer에 @NotNull, @NotBlank가 붙어있어서 검증 에러가 났습니다.<br>
+      이상적으로는 등록용/수정용 DTO를 분리하는 게 맞지만, 빠른 해결을 위해 수정 시에도 bookID와 reviewer를 함께 보내는 방식으로 해결했습니다.<br><br>
+    
+      또한 Jackson 설정에서 MediaType.APPLICATION_JSON_VALUE를 명시하지 않아서 JSON 변환이 안 되는 문제가 있었습니다. (기존의 문자열만 받을 땐 TEXT_PLAIN_VALUE를 사용)
 </details>
 
 <!-- ## 아쉬운 점 및 추가하고 싶은 기능 -->
