@@ -210,13 +210,13 @@ CRUD 구현과 웹 애플리케이션 전 과정을 학습하기 위해 진행�
 <details>
   <summary>도서 수정시 이미지 null 문제</summary>
   
-+ 문제<br>
++ 배경<br>
   : 기존 도서 수정 화면에서 파일 첨부 없이 저장하면, 이미지 값(book.image)이 null로 저장되어 기존 이미지가 사라지는 현상이 발생했습니다.
 
 + 원인<br>
   : 컨트롤러에서 MultipartFile file이 비어있을 때 기존 이미지 값을 유지하지 않고, bookVO.image가 null로 덮어써지는 로직 때문이었습니다.
 
-+ 해결 방법<br>
++ 해결<br>
   : 파일 첨부가 없을 경우 기존 도서 정보를 조회하여 이미지 URL을 유지하도록 수정했습니다.
 
 ```
@@ -230,6 +230,115 @@ if (file != null && !file.isEmpty()) {
 ```
 + 결과<br>
   : 도서 수정 시 이미지 첨부 여부와 관계없이 기존 이미지를 유지해서 해결했습니다.
+</details>
+
+<details>
+  <summary>리뷰 기능 API 응답 구조 개선</summary>
+  
+  + 배경<br>
+    : 프로젝트 초기에는 빠른 구현을 위해 단순히 "success" 문자열을 반환하는 방식으로 API를 설계했습니다. 그러나 실제 사용 중 다음과 같은 문제를 발견했습니다:
+      - **문자열 의존**: `result !== "success"` 같은 하드코딩된 문자열 비교
+      - **입력값 검증 부재**: 빈 리뷰, 500자 초과 등 잘못된 데이터가 DB에 저장될 위험
+      - **디버깅 어려움**: 디버깅 시 문제 원인 파악이 어려움
+
+  + 개선 내용 (예시)<br>
+  
+  #### Before
+  ```java
+  // Controller
+  @PostMapping(value = "/new")
+    public ResponseEntity create(@RequestBody ReviewVO vo) {
+      int insertCount = service.register(vo);
+      return insertCount == 1 
+        ? new ResponseEntity<>("success", HttpStatus.OK)
+        : new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+  ```
+
+  #### After
+  ```java
+  // DTO 정의
+  @Data
+  @AllArgsConstructor
+  public class ReviewResponseDTO {
+    private boolean success;
+    private String message;
+    private Long rno;
+  }
+
+  // Controller
+  @PostMapping(value = "/new", produces = MediaType.APPLICATION_JSON_VALUE)
+  public ResponseEntity create(@Valid @RequestBody ReviewVO vo, BindingResult bindingResult) {
+    
+    if (bindingResult.hasErrors()) {
+    String errorMsg = bindingResult.getAllErrors().get(0).getDefaultMessage();
+    return ResponseEntity.badRequest().body(new ReviewResponseDTO(false, errorMsg, null));
+    }
+    
+    try {
+      int insertCount = service.register(vo);
+      if (insertCount == 1) {
+        return ResponseEntity.ok(
+        new ReviewResponseDTO(true, "리뷰가 등록되었습니다.", vo.getRno()));
+      }
+    } catch (Exception e) {
+      return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).
+      body(new ReviewResponseDTO(false, "서버 오류가 발생했습니다.", null));
+    }
+  ```
+
+  ```
+  // VO에 Validation 추가
+  @Data
+  public class ReviewVO {
+      @NotBlank(message = "리뷰 내용을 입력해주세요")
+      @Size(max = 500, message = "리뷰는 500자 이내로 작성해주세요")
+      private String review;
+    
+      @NotBlank(message = "작성자 정보가 필요합니다")
+      private String reviewer;
+    
+      @NotNull(message = "책 정보가 필요합니다")
+      private Long bookID;
+  }
+```
+
+  #### 클라이언트 코드 개선
+  ```javascript
+  // Before
+  reviewService.add(review, function(result){
+      if (result !== "success") {
+          alert(result);
+      }
+      modal.modal("hide");
+      showList(-1);
+  });
+
+  // After
+  reviewService.add(review, function(response){
+      if (response.success) {
+          alert(response.message);
+          modal.modal("hide");
+          showList(-1);
+      } else {
+          alert(response.message);
+      }
+  });
+  ```
+
+  **주요 변경 사항**
+  - **응답 DTO 도입**: 성공 여부, 메시지, 데이터를 포함한 구조화된 응답
+  - **입력값 검증**: `@NotBlank`, `@Size` 등 Bean Validation 적용
+  - **에러 핸들링**: try-catch로 예외 상황 처리 및 적절한 HTTP 상태 코드 반환
+  - **프론트엔드 개선**: "success" 문자열 비교 → response.success 객체 활용
+   
+  ### 추가한 기술 스택
+  - Spring Validation (Bean Validation)
+  - Jackson (JSON 직렬화)
+
+  ### 배운 점
+  - **클라이언트-서버 책임 분리**: 에러 메시지는 서버에서 생성하고 클라이언트는 표시만
+  - **API 설계의 중요성**: 초기 설계 단계에서 확장성을 고려하지 않으면 나중에 큰 리팩토링 필요
 </details>
 
 <!-- ## 아쉬운 점 및 추가하고 싶은 기능 -->
