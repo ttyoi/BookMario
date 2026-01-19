@@ -266,13 +266,16 @@
 				        		reviewer: currentUser,
 				        		bookID:bookIDValue
 				        	};
-				        	reviewService.add(review, function(result){
-				        		if (result !== "success") {
-				                    alert(result);
+				        	
+				        	reviewService.add(review, function(response){
+				        		if (response.success) {
+				                    alert(response.message);
+				                    modal.find("input").val("");
+					        		modal.modal("hide");	
+					        		showList(-1);
+				                } else {
+				                	alert(response.message);
 				                }
-				        		modal.find("input").val("");
-				        		modal.modal("hide");	
-				        		showList(-1);
 				        	});
 				        });
 				     	// 등록된 리뷰 수정 및 삭제 모달
@@ -302,26 +305,32 @@
 				            });
 				        });
 				     	
-				     	// 페이지 수정과 삭제시 현재 리뷰가 포함된 페이지로 이동하도록 하는 부분
+				     	// 수정 버튼 클릭
 				     	modalModBtn.on("click", function(e){
-				     		var review = {rno:modal.data("rno"), review: modalInputReview.val()};
-				     		reviewService.update(review, function(result){
-				     			if (result !== "success") {
-				                    alert(result);
-				                }
-				     			modal.modal("hide");
-				     			showList(pageNum);
+				     		// ReviewVO에 @NotNull, @NotBlank를 붙였기 때문에 모든 필드를 검증함 따로 DTO를 분리하는게 좋음
+				     		var review = {rno:modal.data("rno"), review: modalInputReview.val(), bookID: bookIDValue, reviewer: currentUser};
+				     		reviewService.update(review, function(response){
+				     			if (response.success) {
+				     	            alert(response.message);
+				     	            modal.modal("hide");
+				     	            showList(pageNum);
+				     	        } else {
+				     	            alert(response.message);
+				     	        }
 				     		});
 				     	});
 				     	
+				     	// 삭제 버튼 클릭
 				     	modalRemoveBtn.on("click", function(e){
 				     		var rno = modal.data("rno");
-				     		reviewService.remove(rno, function(result){
-				     			if (result !== "success") {
-				                    alert(result);
-				                }
-				     			modal.modal("hide");
-				     			showList(pageNum);
+				     		reviewService.remove(rno, function(response){
+				     			if (response.success) {
+				     	            alert(response.message);
+				     	            modal.modal("hide");
+				     	            showList(pageNum);
+				     	        } else {
+				     	            alert(response.message);
+				     	        }
 				     		});
 				     	});
 				     	

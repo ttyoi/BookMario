@@ -11,15 +11,24 @@ var reviewService = (function() {
 	        url: '/review/new',
 	        data: JSON.stringify(review),
 	        contentType: "application/json; charset=utf-8",
-	        success: function(result) {
+	        success: function(response) {
 	            if (callback) {
-	            	callback(result);
+	            	callback(response);
 	                alert("리뷰가 성공적으로 추가되었습니다!");
 	            }
 	        },
 	        error: function(xhr, status, errorMessage) {
-	            if (error) {
-	                error(errorMessage);
+	            var errorResponse = {
+	                success: false,
+	                message: "리뷰 등록에 실패했습니다."
+	            };
+	            
+	            if (xhr.responseJSON && xhr.responseJSON.message) {
+	                errorResponse.message = xhr.responseJSON.message;
+	            }
+	            
+	            if (callback) {
+	                callback(errorResponse);
 	            }
 	        }
 	    });
@@ -50,16 +59,24 @@ var reviewService = (function() {
 		$.ajax({
 			type : 'delete',
 			url : '/review/' + rno,
-			success : function(result, status, xhr) {
+			success : function(response, status, xhr) {
 				if (callback) {
-					callback(result);
-					alert("리뷰가 성공적으로 삭제되었습니다!");
+					callback(response);
 				}
 			},
 			error : function(xhr, status, er) {
-				if (error) {
-					error(er);
-				}
+				var errorResponse = {
+	                success: false,
+	                message: "리뷰 삭제에 실패했습니다."
+	            };
+	            
+	            if (xhr.responseJSON && xhr.responseJSON.message) {
+	                errorResponse.message = xhr.responseJSON.message;
+	            }
+	            
+	            if (callback) {
+	                callback(errorResponse);
+	            }
 			}
 		});
 	}
@@ -71,21 +88,29 @@ var reviewService = (function() {
 			url : '/review/' + review.rno,
 			data : JSON.stringify(review),
 			contentType : "application/json; charset=utf-8",
-			success : function(result, status, xhr) {
+			success : function(response, status, xhr) {
 				if (callback) {
-					callback(result);
-					alert("리뷰가 성공적으로 수정되었습니다!");
+					callback(response);
 				}
 			},
 			error : function(xhr, status, er) {
-				if (error) {
-					error(er);
-				}
+				var errorResponse = {
+	                success: false,
+	                message: "리뷰 수정에 실패했습니다."
+	            };
+	            
+	            if (xhr.responseJSON && xhr.responseJSON.message) {
+	                errorResponse.message = xhr.responseJSON.message;
+	            }
+	            
+	            if (callback) {
+	                callback(errorResponse);
+	            }
 			}
 		});
 	}
 	
-	// 댓글 조회 처리
+	// 리뷰 단건 조회 처리
 	function get(rno, callback, error) {
 		$.get("/review/" + rno + ".json", function(result) {
             if (callback) {
